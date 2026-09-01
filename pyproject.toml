@@ -1,0 +1,37 @@
+[project]
+name = "call-me-maybe"
+version = "0.1.0"
+description = "Introduccion a la llamada de funciones en LLMs mediante decodificacion restringida (42)"
+requires-python = ">=3.10"
+dependencies = [
+    "numpy>=1.26",
+    "pydantic>=2.6",
+    "llm-sdk",
+]
+
+# Dependencias solo de desarrollo (uv las instala con `uv sync`).
+# No hacen falta para ejecutar el proyecto, pero si para lint y tests.
+[dependency-groups]
+dev = [
+    "flake8>=7.0",
+    "mypy>=1.8",
+    "pytest>=8.0",
+]
+
+[tool.uv]
+# El proyecto se ejecuta con `uv run python -m src`, no se instala como paquete.
+package = false
+
+[tool.uv.sources]
+# El paquete llm_sdk se entrega dentro del repo, en ./llm_sdk (copiado del zip).
+llm-sdk = { path = "llm_sdk", editable = true }
+
+# Configuracion de mypy que refleja los flags obligatorios del subject,
+# para que un `mypy src` a secas ya use las mismas reglas que el Makefile.
+[tool.mypy]
+python_version = "3.10"
+warn_return_any = true
+warn_unused_ignores = true
+disallow_untyped_defs = true
+check_untyped_defs = true
+ignore_missing_imports = true
