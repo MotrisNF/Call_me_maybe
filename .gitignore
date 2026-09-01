@@ -1,0 +1,29 @@
+# Entornos virtuales
+.venv/
+venv/
+env/
+
+# Cachés de Python
+__pycache__/
+*.py[cod]
+*$py.class
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+.cache/
+
+# Artefactos de build / empaquetado
+*.egg-info/
+build/
+dist/
+
+# Salida generada por el proyecto (no se entrega, se genera en la evaluación)
+data/output/
+
+# Cobertura y tests
+.coverage
+htmlcov/
+
+# Ficheros del sistema / editor
+.DS_Store
+*.swp
