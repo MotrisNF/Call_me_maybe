@@ -23,11 +23,8 @@ dev = [
 package = false
 
 [tool.uv.sources]
-# El paquete llm_sdk se entrega dentro del repo, en ./llm_sdk (copiado del zip).
 llm-sdk = { path = "llm_sdk", editable = true }
 
-# Configuracion de mypy que refleja los flags obligatorios del subject,
-# para que un `mypy src` a secas ya use las mismas reglas que el Makefile.
 [tool.mypy]
 python_version = "3.10"
 warn_return_any = true
@@ -35,3 +32,15 @@ warn_unused_ignores = true
 disallow_untyped_defs = true
 check_untyped_defs = true
 ignore_missing_imports = true
+# El paquete llm_sdk vive en ./llm_sdk/llm_sdk; sin esto mypy resuelve
+# el import contra la carpeta contenedora ./llm_sdk (que no es el paquete).
+mypy_path = "llm_sdk"
+explicit_package_bases = true
+
+# Los stubs de numpy 2.x usan sintaxis de Python 3.12 (`type X = ...`) que
+# mypy no sabe parsear con python_version = "3.10". No queremos type-checkear
+# las tripas de numpy, asi que las saltamos.
+[[tool.mypy.overrides]]
+module = ["numpy", "numpy.*"]
+follow_imports = "skip"
+follow_imports_for_stubs = true
