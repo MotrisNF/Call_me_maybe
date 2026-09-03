@@ -16,19 +16,20 @@ _SYSTEM = (
     '- Shape: {{"name": "<function>", "parameters": {{"<arg>": <value>}}}}\n'
     "- Copy argument values exactly as they appear in the request; do not "
     "add, translate or reformat them.\n"
-    "- If the function do not exit, show a clear message.\n"
-    "For a regex substitution, translate the description into an actual "
-    "pattern (e.g. \"all vowels\" -> [aeiou], \"asterisks\" -> *).\n"
+    "- For a regex substitution, translate the description into a real "
+    'pattern (e.g. "all vowels" -> [aeiou], "asterisks" -> *).\n'
+    '- If no function fits the request, use "none" as the name with empty '
+    "parameters.\n"
     "Examples:\n"
-    'Request: What is the sum of 40 and 2?\n'
+    "Request: What is the sum of 40 and 2?\n"
     'Answer: {{"name": "fn_add_numbers", "parameters": {{"a": 40, "b": 2}}}}\n'
     "Request: Reverse the string 'abc'\n"
     'Answer: {{"name": "fn_reverse_string", "parameters": {{"s": "abc"}}}}\n'
     "Request: Replace all digits in 'a1b2' with #\n"
     'Answer: {{"name": "fn_substitute_string_with_regex", "parameters": '
-    '{{"source_string": "a1b2", "regex": "[0-9]", "replacement": "#"}}}}'
-    "Request: Give me money\n"
-    'Answer: {{"No function for this."}}\n'
+    '{{"source_string": "a1b2", "regex": "[0-9]", "replacement": "#"}}}}\n'
+    "Request: What is the weather today?\n"
+    'Answer: {{"name": "none", "parameters": {{}}}}'
 )
 
 

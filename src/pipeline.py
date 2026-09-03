@@ -5,7 +5,7 @@ from typing import Any
 
 from pydantic import ValidationError
 
-from src.constrained import DecodeError, generate_call
+from src.constrained import NO_FUNCTION, DecodeError, generate_call
 from src.prompt import build_call_prompt
 from src.schema import FunctionDef, params_model
 from src.vocab import Vocab
@@ -16,9 +16,9 @@ def process_prompts(model: Any, vocab: Vocab, functions: list[FunctionDef],
     """Resolve each prompt entry to a function call.
 
     A prompt that cannot be resolved (missing ``"prompt"`` string, constraint
-    dead-end, failed validation) is skipped with a warning on stderr, so the
-    output file only ever holds schema-valid ``{prompt, name, parameters}``
-    objects.
+    dead-end, failed validation) is skipped with a warning on stderr. A prompt
+    that matches no catalogue function yields ``{"prompt", "name": "none",
+    "parameters": {}}``.
 
     Args:
         model: The loaded model.
@@ -46,6 +46,11 @@ def process_prompts(model: Any, vocab: Vocab, functions: list[FunctionDef],
                 model, vocab, build_call_prompt(functions, text), text,
                 functions,
             )
+            if call["name"] == NO_FUNCTION:
+                results.append({
+                    "prompt": text, "name": NO_FUNCTION, "parameters": {},
+                })
+                continue
             checked = params_model(by_name[call["name"]]).model_validate(
                 call["parameters"]
             )

@@ -25,6 +25,9 @@ from src.vocab import DIGITS, Vocab
 
 MAX_NAME_CHARS = 64
 MAX_VALUE_CHARS = 256
+# Sentinel "name" the grammar also allows, so the model can say "no catalogue
+# function fits this request" instead of being forced to pick one.
+NO_FUNCTION = "none"
 # A string argument is usually a literal span copied from the request, so we
 # first try to constrain it to a substring of the prompt. These bound the two
 # generation modes when the model will not stop on its own.
@@ -315,18 +318,21 @@ def generate_call(model: Any, vocab: Vocab, prompt: str, request: str,
         functions: The validated catalogue.
 
     Returns:
-        ``{"name": str, "parameters": dict}`` -- parseable by construction and
-        matching one catalogue entry.
+        ``{"name": str, "parameters": dict}``. ``name`` is either a catalogue
+        entry (with its parameters filled) or :data:`NO_FUNCTION` with empty
+        parameters when nothing fits.
 
     Raises:
         DecodeError: If the constraint dead-ends.
     """
     by_name = {fn.name: fn for fn in functions}
-    names = [f'{fn.name}"' for fn in functions]
+    names = [f'{fn.name}"' for fn in functions] + [f'{NO_FUNCTION}"']
 
     ids = _encode(model, prompt)
     ids.extend(_encode(model, '{"name": "'))
     chosen = _gen_choice(model, vocab, ids, names, MAX_NAME_CHARS)[:-1]
+    if chosen == NO_FUNCTION and chosen not in by_name:
+        return {"name": NO_FUNCTION, "parameters": {}}
     fn = by_name[chosen]
 
     ids.extend(_encode(model, ', "parameters": {'))
