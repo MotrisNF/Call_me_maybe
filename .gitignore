@@ -1,4 +1,5 @@
-# Virtual environments
+# Virtual environments (.venv may be a symlink on space-constrained machines)
+.venv
 .venv/
 venv/
 env/

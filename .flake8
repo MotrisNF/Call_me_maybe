@@ -1,0 +1,4 @@
+[flake8]
+# `flake8 .` (the subject's lint command) must only check our code:
+# llm_sdk is the provided SDK, .venv may be a symlink into goinfre.
+extend-exclude = .venv,llm_sdk,build,dist

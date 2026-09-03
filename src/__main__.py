@@ -79,7 +79,7 @@ def load_json(path: Path) -> Any:
         sys.exit(f"error: cannot read '{path}': {exc}")
 
 
-def bootstrap_model() -> None:
+def load_model() -> Any:
     """Instantiate the model to force its download and check the SDK.
 
     The first run downloads the ``Qwen/Qwen3-0.6B`` weights (~1.5 GB) into the
@@ -88,21 +88,13 @@ def bootstrap_model() -> None:
     """
     try:
         from llm_sdk import Small_LLM_Model
+        print("[DONE]")
     except ImportError as exc:
+        print()
         sys.exit(f"error: cannot import llm_sdk: {exc}")
 
-    print(f"[bootstrap] loading model '{MODEL_NAME}' (may take a while)...")
     model = Small_LLM_Model(model_name=MODEL_NAME)
-
-    # Minimal check that the SDK responds.
-    token_ids = model.encode("What is the sum of 2 and 3?")
-    logits = model.get_logits_from_input_ids(token_ids[0].tolist())
-    vocab_path = model.get_path_to_vocab_file()
-
-    print(f"[bootstrap] tokens in the sample prompt: {token_ids.shape[1]}")
-    print(f"[bootstrap] vocabulary size (logits): {len(logits)}")
-    print(f"[bootstrap] vocabulary file: {vocab_path}")
-    print("[bootstrap] model ready.")
+    return model
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -119,13 +111,12 @@ def main(argv: list[str] | None = None) -> int:
     functions = load_json(args.functions_definition)
     prompts = load_json(args.input)
 
-    print(f"[bootstrap] functions loaded: {len(functions)}")
-    print(f"[bootstrap] prompts loaded:   {len(prompts)}")
+    print(f"Functions loaded: {len(functions)}")
+    print(f"Prompts loaded:   {len(prompts)}")
 
-    bootstrap_model()
+    print("Trying to import the llm_sdk... ", end="")
+    load_model()
 
-    print("[bootstrap] TODO: implement constrained decoding and write the")
-    print(f"[bootstrap]       result to '{args.output}'.")
     return 0
 
 

@@ -49,6 +49,9 @@ ignore_missing_imports = true
 # the import against the containing folder ./llm_sdk (which is not the package).
 mypy_path = "llm_sdk"
 explicit_package_bases = true
+# `mypy .` (as the subject spells the lint command) would otherwise try to
+# type-check third-party / generated trees. Only our code is ours to fix.
+exclude = ['^\.venv/', '^llm_sdk/', '^build/', '^dist/']
 
 # numpy 2.x ships stubs that use Python 3.12 syntax (`type X = ...`), which mypy
 # cannot parse under python_version = "3.10". We don't want to type-check numpy's
