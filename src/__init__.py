@@ -1,2 +1,4 @@
-# ABOUTME: Main package for the "call me maybe" project.
-# ABOUTME: Run it with `uv run python -m src`.
+"""Main package for the "call me maybe" project.
+
+Run it with ``uv run python -m src``.
+"""

@@ -1,16 +1,20 @@
 [project]
 name = "call-me-maybe"
 version = "0.1.0"
-description = "Introduccion a la llamada de funciones en LLMs mediante decodificacion restringida (42)"
+description = "Introduction to the LLM"
 requires-python = ">=3.10"
 dependencies = [
     "numpy>=1.26",
     "pydantic>=2.6",
     "llm-sdk",
+    # torch is already pulled in transitively by llm_sdk; it is declared here
+    # only so its source can be pinned to the CPU-only build (see
+    # [tool.uv.sources]).
+    "torch",
 ]
 
-# Dependencias solo de desarrollo (uv las instala con `uv sync`).
-# No hacen falta para ejecutar el proyecto, pero si para lint y tests.
+# Development-only dependencies (installed by `uv sync`). Not required to run
+# the project, only for linting and tests.
 [dependency-groups]
 dev = [
     "flake8>=7.0",
@@ -19,11 +23,20 @@ dev = [
 ]
 
 [tool.uv]
-# El proyecto se ejecuta con `uv run python -m src`, no se instala como paquete.
+# The project runs via `uv run python -m src`; it is not installed as a package.
 package = false
 
 [tool.uv.sources]
 llm-sdk = { path = "llm_sdk", editable = true }
+# torch is pulled in by llm_sdk. By default uv downloads the CUDA build, which
+# brings several GB of nvidia-* wheels that are useless here (the machine runs
+# on CPU). Pin it to the CPU-only build from PyTorch's official index.
+torch = { index = "pytorch-cpu" }
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
 
 [tool.mypy]
 python_version = "3.10"
@@ -32,14 +45,14 @@ warn_unused_ignores = true
 disallow_untyped_defs = true
 check_untyped_defs = true
 ignore_missing_imports = true
-# El paquete llm_sdk vive en ./llm_sdk/llm_sdk; sin esto mypy resuelve
-# el import contra la carpeta contenedora ./llm_sdk (que no es el paquete).
+# The llm_sdk package lives at ./llm_sdk/llm_sdk; without this, mypy resolves
+# the import against the containing folder ./llm_sdk (which is not the package).
 mypy_path = "llm_sdk"
 explicit_package_bases = true
 
-# Los stubs de numpy 2.x usan sintaxis de Python 3.12 (`type X = ...`) que
-# mypy no sabe parsear con python_version = "3.10". No queremos type-checkear
-# las tripas de numpy, asi que las saltamos.
+# numpy 2.x ships stubs that use Python 3.12 syntax (`type X = ...`), which mypy
+# cannot parse under python_version = "3.10". We don't want to type-check numpy's
+# internals, so skip them.
 [[tool.mypy.overrides]]
 module = ["numpy", "numpy.*"]
 follow_imports = "skip"

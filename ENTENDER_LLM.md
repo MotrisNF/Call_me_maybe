@@ -49,14 +49,14 @@ digas.
 1. **Crea la carpeta destino:**
 
    ```
-   mkdir -p ~/goinfre/hf_cache
+   mkdir -p ~/Sgoinfre/hf_cache
    ```
 
 2. **Apunta Hugging Face a esa carpeta.** Para que valga siempre, añade esta
    línea al final de tu `~/.hellishrc` (tu shell es `hellish`) — o a `~/.bashrc`:
 
    ```
-   export HF_HOME=~/goinfre/hf_cache
+   export HF_HOME=~/Sgoinfre/hf_cache
    ```
 
    Después abre una terminal nueva, o recarga la config, y comprueba:

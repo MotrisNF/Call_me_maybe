@@ -1,9 +1,9 @@
-# Entornos virtuales
+# Virtual environments
 .venv/
 venv/
 env/
 
-# Cachés de Python
+# Python caches
 __pycache__/
 *.py[cod]
 *$py.class
@@ -12,18 +12,18 @@ __pycache__/
 .ruff_cache/
 .cache/
 
-# Artefactos de build / empaquetado
+# Build / packaging artifacts
 *.egg-info/
 build/
 dist/
 
-# Salida generada por el proyecto (no se entrega, se genera en la evaluación)
+# Project-generated output (not delivered; created during evaluation)
 data/output/
 
-# Cobertura y tests
+# Coverage and tests
 .coverage
 htmlcov/
 
-# Ficheros del sistema / editor
+# System / editor files
 .DS_Store
 *.swp

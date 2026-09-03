@@ -1,7 +1,8 @@
-# ABOUTME: Entry point for `uv run python -m src`.
-# ABOUTME: For now it only bootstraps: it loads the input JSON files and
-# ABOUTME: downloads/checks the LLM. Constrained decoding will be built on
-# ABOUTME: top of this.
+"""Entry point for ``uv run python -m src``.
+
+For now it only bootstraps: it loads the input JSON files and downloads or
+checks the LLM. Constrained decoding will be built on top of this.
+"""
 
 import argparse
 import json
@@ -81,15 +82,16 @@ def load_json(path: Path) -> Any:
 def bootstrap_model() -> None:
     """Instantiate the model to force its download and check the SDK.
 
-    The first run downloads the ``Qwen/Qwen3-0.6B`` weights (~1.2 GB) into
-    ``~/.cache/huggingface``. Later runs use the local cache.
+    The first run downloads the ``Qwen/Qwen3-0.6B`` weights (~1.5 GB) into the
+    Hugging Face cache directory (``$HF_HOME`` if set, otherwise
+    ``~/.cache/huggingface``). Later runs use the local cache.
     """
     try:
         from llm_sdk import Small_LLM_Model
     except ImportError as exc:
         sys.exit(f"error: cannot import llm_sdk: {exc}")
 
-    print(f"[bootstrap] loading model '{MODEL_NAME}' (this may take a while)...")
+    print(f"[bootstrap] loading model '{MODEL_NAME}' (may take a while)...")
     model = Small_LLM_Model(model_name=MODEL_NAME)
 
     # Minimal check that the SDK responds.
@@ -104,7 +106,7 @@ def bootstrap_model() -> None:
 
 
 def main(argv: list[str] | None = None) -> int:
-    """Program entry point.
+    """Run the program end to end.
 
     Args:
         argv: Command-line arguments (useful for tests).
