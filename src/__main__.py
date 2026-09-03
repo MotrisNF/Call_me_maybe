@@ -1,7 +1,7 @@
-# ABOUTME: Punto de entrada de `uv run python -m src`.
-# ABOUTME: De momento solo hace bootstrap: carga los JSON de entrada y
-# ABOUTME: descarga/comprueba el modelo LLM. La decodificacion restringida
-# ABOUTME: se implementara encima de esto.
+# ABOUTME: Entry point for `uv run python -m src`.
+# ABOUTME: For now it only bootstraps: it loads the input JSON files and
+# ABOUTME: downloads/checks the LLM. Constrained decoding will be built on
+# ABOUTME: top of this.
 
 import argparse
 import json
@@ -17,112 +17,113 @@ MODEL_NAME = "Qwen/Qwen3-0.6B"
 
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
-    """Parsea los argumentos de linea de comandos.
+    """Parse the command-line arguments.
 
     Args:
-        argv: Lista de argumentos. Si es ``None`` se usa ``sys.argv``.
+        argv: List of arguments. If ``None``, ``sys.argv`` is used.
 
     Returns:
-        El espacio de nombres con ``functions_definition``, ``input`` y
-        ``output`` como objetos :class:`pathlib.Path`.
+        The namespace with ``functions_definition``, ``input`` and
+        ``output`` as :class:`pathlib.Path` objects.
     """
     parser = argparse.ArgumentParser(
         prog="python -m src",
         description=(
-            "Traduce prompts en lenguaje natural a llamadas de funcion "
-            "usando decodificacion restringida."
+            "Translate natural-language prompts into structured function "
+            "calls using constrained decoding."
         ),
     )
     parser.add_argument(
         "--functions_definition",
         type=Path,
         default=DEFAULT_FUNCTIONS,
-        help="JSON con las funciones disponibles.",
+        help="JSON file with the available functions.",
     )
     parser.add_argument(
         "--input",
         type=Path,
         default=DEFAULT_INPUT,
-        help="JSON con los prompts a procesar.",
+        help="JSON file with the prompts to process.",
     )
     parser.add_argument(
         "--output",
         type=Path,
         default=DEFAULT_OUTPUT,
-        help="Fichero JSON de salida.",
+        help="Output JSON file.",
     )
     return parser.parse_args(argv)
 
 
 def load_json(path: Path) -> Any:
-    """Carga un fichero JSON gestionando los errores con elegancia.
+    """Load a JSON file, handling errors gracefully.
 
     Args:
-        path: Ruta al fichero JSON.
+        path: Path to the JSON file.
 
     Returns:
-        El objeto Python resultante de deserializar el JSON.
+        The Python object produced by deserializing the JSON.
 
     Raises:
-        SystemExit: Si el fichero no existe o no contiene JSON valido.
+        SystemExit: If the file does not exist or does not contain valid
+            JSON.
     """
     try:
         with path.open(encoding="utf-8") as handle:
             return json.load(handle)
     except FileNotFoundError:
-        sys.exit(f"error: no se encuentra el fichero '{path}'")
+        sys.exit(f"error: file '{path}' not found")
     except json.JSONDecodeError as exc:
-        sys.exit(f"error: '{path}' no es JSON valido: {exc}")
+        sys.exit(f"error: '{path}' is not valid JSON: {exc}")
     except OSError as exc:
-        sys.exit(f"error: no se puede leer '{path}': {exc}")
+        sys.exit(f"error: cannot read '{path}': {exc}")
 
 
 def bootstrap_model() -> None:
-    """Instancia el modelo para forzar su descarga y comprobar el SDK.
+    """Instantiate the model to force its download and check the SDK.
 
-    La primera vez descarga los pesos de ``Qwen/Qwen3-0.6B`` (~1.2 GB) a
-    ``~/.cache/huggingface``. Las siguientes llamadas usan la cache local.
+    The first run downloads the ``Qwen/Qwen3-0.6B`` weights (~1.2 GB) into
+    ``~/.cache/huggingface``. Later runs use the local cache.
     """
     try:
         from llm_sdk import Small_LLM_Model
     except ImportError as exc:
-        sys.exit(f"error: no se puede importar llm_sdk: {exc}")
+        sys.exit(f"error: cannot import llm_sdk: {exc}")
 
-    print(f"[bootstrap] cargando modelo '{MODEL_NAME}' (puede tardar)...")
+    print(f"[bootstrap] loading model '{MODEL_NAME}' (this may take a while)...")
     model = Small_LLM_Model(model_name=MODEL_NAME)
 
-    # Comprobacion minima de que el SDK responde.
+    # Minimal check that the SDK responds.
     token_ids = model.encode("What is the sum of 2 and 3?")
     logits = model.get_logits_from_input_ids(token_ids[0].tolist())
     vocab_path = model.get_path_to_vocab_file()
 
-    print(f"[bootstrap] tokens del prompt de prueba: {token_ids.shape[1]}")
-    print(f"[bootstrap] tamano del vocabulario (logits): {len(logits)}")
-    print(f"[bootstrap] fichero de vocabulario: {vocab_path}")
-    print("[bootstrap] modelo listo.")
+    print(f"[bootstrap] tokens in the sample prompt: {token_ids.shape[1]}")
+    print(f"[bootstrap] vocabulary size (logits): {len(logits)}")
+    print(f"[bootstrap] vocabulary file: {vocab_path}")
+    print("[bootstrap] model ready.")
 
 
 def main(argv: list[str] | None = None) -> int:
-    """Punto de entrada del programa.
+    """Program entry point.
 
     Args:
-        argv: Argumentos de linea de comandos (para tests).
+        argv: Command-line arguments (useful for tests).
 
     Returns:
-        Codigo de salida del proceso (0 si todo va bien).
+        Process exit code (0 on success).
     """
     args = parse_args(argv)
 
     functions = load_json(args.functions_definition)
     prompts = load_json(args.input)
 
-    print(f"[bootstrap] funciones cargadas: {len(functions)}")
-    print(f"[bootstrap] prompts cargados:  {len(prompts)}")
+    print(f"[bootstrap] functions loaded: {len(functions)}")
+    print(f"[bootstrap] prompts loaded:   {len(prompts)}")
 
     bootstrap_model()
 
-    print("[bootstrap] TODO: implementar la decodificacion restringida y")
-    print(f"[bootstrap]       escribir el resultado en '{args.output}'.")
+    print("[bootstrap] TODO: implement constrained decoding and write the")
+    print(f"[bootstrap]       result to '{args.output}'.")
     return 0
 
 
