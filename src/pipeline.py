@@ -15,10 +15,11 @@ def process_prompts(model: Any, vocab: Vocab, functions: list[FunctionDef],
                     prompts: Any) -> list[dict[str, Any]]:
     """Resolve each prompt entry to a function call.
 
-    A prompt that cannot be resolved (missing ``"prompt"`` string, constraint
-    dead-end, failed validation) is skipped with a warning on stderr. A prompt
-    that matches no catalogue function yields ``{"prompt", "name": "none",
-    "parameters": {}}``.
+    A prompt that cannot be resolved -- missing ``"prompt"`` string, no
+    matching catalogue function, constraint dead-end, failed validation -- is
+    skipped with a warning on stderr, so the output file only ever holds
+    schema-valid ``{prompt, name, parameters}`` objects whose ``name`` is a
+    real catalogue entry.
 
     Args:
         model: The loaded model.
@@ -47,9 +48,8 @@ def process_prompts(model: Any, vocab: Vocab, functions: list[FunctionDef],
                 functions,
             )
             if call["name"] == NO_FUNCTION:
-                results.append({
-                    "prompt": text, "name": NO_FUNCTION, "parameters": {},
-                })
+                print(f"warning: no matching function for {text!r}, skipping",
+                      file=sys.stderr)
                 continue
             checked = params_model(by_name[call["name"]]).model_validate(
                 call["parameters"]

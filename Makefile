@@ -16,10 +16,10 @@ MYPY_FLAGS := --warn-return-any --warn-unused-ignores --ignore-missing-imports \
 all: install
 
 # Install dependencies with uv.
-# On a disk-constrained 42 machine, .venv is a symlink into ~/goinfre, which is
-# wiped periodically. If the target is missing, a bare `uv sync` fails with
-# "File exists", so recreate the target directory first. On a fresh clone
-# (moulinette) .venv is not a symlink and this step is skipped.
+# On a disk-constrained machine .venv may be a symlink to a bigger partition.
+# If its target directory is missing, a bare `uv sync` fails with "File
+# exists", so recreate it first. On a fresh clone (moulinette) .venv is not a
+# symlink and this step is skipped, leaving a plain `uv sync`.
 install:
 	@if [ -L .venv ]; then \
 		target=$$(readlink .venv); \

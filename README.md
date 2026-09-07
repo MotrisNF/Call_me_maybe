@@ -36,7 +36,6 @@ constraint only removes every token that would break the JSON or the schema.
 | `src/constrained.py` | the constrained decoder |
 | `src/pipeline.py` | run every prompt, collect results, isolate per-prompt failures |
 | `src/output.py` | write `data/output/function_calling_results.json` |
-| `src/llm.py` | a plain (unconstrained) greedy loop, kept as a reference |
 | `src/__main__.py` | CLI and orchestration |
 
 ## Instructions
@@ -103,8 +102,9 @@ $ cat data/output/function_calling_results.json
 ]
 ```
 
-If a prompt matches no catalogue function, its entry is
-`{ "prompt": ..., "name": "none", "parameters": {} }`.
+A prompt that matches no catalogue function is skipped with a warning on
+stderr and produces no entry, so every `name` in the output is a real
+catalogue function.
 
 ## Algorithm — constrained decoding
 
@@ -202,12 +202,13 @@ than a general grammar engine.
 * **Per-prompt isolation.** `process_prompts` wraps each prompt in
   `try/except`; a dead-end or a validation failure on one prompt produces a
   stderr warning and is skipped, never a crash.
-* **`"none"` sentinel.** The grammar also allows `"none"` as a name so the
-  model can decline instead of being forced to pick. (Note: this is an
-  extension; the subject's schema assumes every prompt maps to a catalogue
-  function.)
-* **CPU-only `torch`.** The workstation has no GPU; pinning the CPU wheel
-  keeps the environment ~1 GB instead of ~4 GB.
+* **`"none"` sentinel.** The name grammar also allows `"none"` so the model
+  can decline instead of being forced into a wrong function. When it does, the
+  prompt is skipped (no output row) — the output never carries a `name`
+  outside the catalogue.
+* **CPU-only `torch`.** The workstation has no NVIDIA GPU; pinning the CPU
+  wheel keeps the environment ~1 GB instead of ~4 GB and pulls no `nvidia-*`
+  packages.
 
 ## Performance analysis
 
@@ -218,9 +219,9 @@ Measured on the provided `function_calling_tests.json` (11 prompts):
 | JSON validity | **11 / 11** — valid by construction |
 | Schema conformance (keys, types) | **11 / 11** |
 | Function selection | **11 / 11** |
-| Argument values fully correct | **~19 / 20** (one inferred regex, `[aeiou]`, came out as `aeiouAEIOU`) |
+| Argument values correct | **18 / 19** (the one miss: "all vowels" was inferred as the regex `aeiouAEIOU` instead of `[aeiou]`) |
 | Forward passes, whole run | ~130 (6–12 per simple call, 20–30 for regex substitutions) |
-| Wall time, unloaded CPU | ~1 minute (~0.3 s / forward + ~18 s model load) |
+| Wall time, unloaded CPU | ~1–2 minutes (~0.3 s / forward + model load) |
 | Wall time, heavily-loaded shared CPU | 4–5 minutes |
 
 The program's own overhead (constraint checks, argmax over the restricted set,
@@ -246,9 +247,12 @@ substring lookups) is negligible — essentially 100 % of the time is
   must be inferred.
 * **No `eos_token_id`.** It lives on a private SDK attribute. Not needed in the
   end: the walker knows the JSON is complete when the final `}}` is injected.
-* **Environment.** The 42 workstation's home partition is ~2 GB; the virtual
-  environment and model cache are redirected to `goinfre` / `sgoinfre`. This is
-  a local setup detail, not part of the deliverable.
+* **Environment.** The 42 workstation's home partition is ~2 GB — too small for
+  the `torch` install plus the 1.5 GB model. Locally, the `uv` cache and the
+  Hugging Face cache are symlinked to the persistent network partition
+  (`sgoinfre`), and `.venv` to the fast local scratch partition (`goinfre`); a
+  scratch wipe is recovered with a plain `make install`. This is a local setup
+  detail, not part of the deliverable — a fresh clone just runs `uv sync`.
 
 ## Testing strategy
 

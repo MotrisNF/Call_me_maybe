@@ -123,10 +123,12 @@ def main(argv: list[str] | None = None) -> int:
         functions = load_function_defs(load_json(args.functions_definition))
     except ValueError as exc:
         sys.exit(f"error: invalid functions definition: {exc}")
-    prompts = load_json(args.input)
 
-    print(f"functions: {len(functions)}  prompts: "
-          f"{len(prompts) if isinstance(prompts, list) else '?'}")
+    prompts = load_json(args.input)
+    if not isinstance(prompts, list):
+        sys.exit(f"error: '{args.input}' must contain a JSON array")
+
+    print(f"functions: {len(functions)}  prompts: {len(prompts)}")
 
     model = load_model()
     vocab = build_vocab(model)
