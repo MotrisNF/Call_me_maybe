@@ -28,3 +28,7 @@ htmlcov/
 # System / editor files
 .DS_Store
 *.swp
+
+# Repo campus
+repo/
+repo

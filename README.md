@@ -53,7 +53,7 @@ The reviewer and the moulinette only run `uv sync`. All dependencies
 ### Install
 
 ```sh
-make install        # == uv sync
+make install        # runs `uv sync`
 ```
 
 `torch` is pinned to its **CPU-only** build (`[tool.uv.sources]` in
@@ -61,6 +61,13 @@ make install        # == uv sync
 
 On the first run the model weights (~1.5 GB) are downloaded into the Hugging
 Face cache (`$HF_HOME`, default `~/.cache/huggingface`); later runs are offline.
+
+> On the author's 42 workstation the home partition is ~2 GB. Run **`make
+> install`** once before use: besides `uv sync`, it points `.venv` at a venv
+> on the local scratch partition, so the plain `uv sync` / `uv run python -m
+> src` a reviewer types afterwards also stay off the small partition (`$HF_HOME`
+> and `$UV_CACHE_DIR` are set from `~/.hellishrc`). On any other machine this
+> does nothing and a plain `uv sync` is all that is needed.
 
 ### Run
 
@@ -248,11 +255,15 @@ substring lookups) is negligible — essentially 100 % of the time is
 * **No `eos_token_id`.** It lives on a private SDK attribute. Not needed in the
   end: the walker knows the JSON is complete when the final `}}` is injected.
 * **Environment.** The 42 workstation's home partition is ~2 GB — too small for
-  the `torch` install plus the 1.5 GB model. Locally, the `uv` cache and the
-  Hugging Face cache are symlinked to the persistent network partition
-  (`sgoinfre`), and `.venv` to the fast local scratch partition (`goinfre`); a
-  scratch wipe is recovered with a plain `make install`. This is a local setup
-  detail, not part of the deliverable — a fresh clone just runs `uv sync`.
+  the `torch` install plus the 1.5 GB model. `~/.hellishrc` sets `HF_HOME` to
+  the persistent network partition (`sgoinfre`, where the model lives, so it is
+  never re-downloaded) and `UV_CACHE_DIR` to the fast local one (`goinfre`);
+  `make install` makes `.venv` a symlink to a venv on `goinfre`. Earlier
+  attempts symlinked the `~/.cache` directories directly and kept breaking — a
+  scratch wipe left the symlinks dangling and tools silently recreated them as
+  real directories on the full partition. Routing through env vars plus a
+  single project-local `.venv` symlink is the version that stayed fixed. None
+  of this is in the repo; another machine just runs `uv sync`.
 
 ## Testing strategy
 

@@ -1,8 +1,7 @@
 # Makefile for the "call me maybe" project.
 #
-# The reviewer and the moulinette only run `uv sync` followed by
-# `uv run python -m src ...`. These targets are convenience wrappers around
-# that, plus the lint/clean rules required by the subject.
+# The reviewer / moulinette run only `uv sync` then `uv run python -m src ...`.
+# These targets wrap that, plus the lint/clean rules required by the subject.
 
 # Extra arguments forwarded to the program, e.g.:
 #   make run ARGS="--input data/input/function_calling_tests.json"
@@ -11,43 +10,59 @@ ARGS ?=
 MYPY_FLAGS := --warn-return-any --warn-unused-ignores --ignore-missing-imports \
               --disallow-untyped-defs --check-untyped-defs
 
-.PHONY: all install run debug lint lint-strict test clean fclean re
+# ── Local environment (42 workstation only) ─────────────────────────────
+# The home partition is ~2 GB: too small for the torch install plus the
+# 1.5 GB model. When the scratch partitions exist, `_setup`:
+#   * points UV_CACHE_DIR / HF_HOME at them (exported to every recipe), and
+#   * makes .venv a symlink to a venv on the fast local partition, so that a
+#     bare `uv sync` / `uv run` (what the corrector uses) also stays off the
+#     home partition -- no reliance on `make`.
+# A machine without these partitions (the moulinette) is untouched: .venv is
+# a normal directory from a normal `uv sync`.
+VENV_TARGET := $(HOME)/goinfre/call_me_maybe/venv
+
+ifneq ($(wildcard $(HOME)/goinfre/.),)
+export UV_CACHE_DIR := $(HOME)/goinfre/call_me_maybe/uv-cache
+ON_SCRATCH := 1
+endif
+ifneq ($(wildcard $(HOME)/Sgoinfre/hf_cache/.),)
+export HF_HOME := $(HOME)/Sgoinfre/hf_cache
+endif
+
+.PHONY: all _setup install run debug lint lint-strict test clean fclean re
 
 all: install
 
+_setup:
+ifdef ON_SCRATCH
+	@mkdir -p $(VENV_TARGET) $(HOME)/goinfre/call_me_maybe/uv-cache
+	@if [ ! -L .venv ]; then rm -rf .venv && ln -s $(VENV_TARGET) .venv; fi
+endif
+
 # Install dependencies with uv.
-# On a disk-constrained machine .venv may be a symlink to a bigger partition.
-# If its target directory is missing, a bare `uv sync` fails with "File
-# exists", so recreate it first. On a fresh clone (moulinette) .venv is not a
-# symlink and this step is skipped, leaving a plain `uv sync`.
-install:
-	@if [ -L .venv ]; then \
-		target=$$(readlink .venv); \
-		echo "note: .venv -> $$target (ensuring it exists)"; \
-		mkdir -p "$$target"; \
-	fi
+install: _setup
 	uv sync
 
 # Run the project. Default paths: data/input/ -> data/output/.
-run:
+run: _setup
 	uv run python -m src $(ARGS)
 
 # Run the project under the standard-library debugger (pdb).
-debug:
+debug: _setup
 	uv run python -m pdb -m src $(ARGS)
 
 # flake8 + mypy on our code. llm_sdk (provided) and .venv are excluded via
 # .flake8 and pyproject.toml so the subject's `flake8 .` / `mypy .` still work.
-lint:
+lint: _setup
 	uv run flake8 .
 	uv run mypy . $(MYPY_FLAGS)
 
-lint-strict:
+lint-strict: _setup
 	uv run flake8 .
 	uv run mypy . --strict
 
-# Run the test suite. Exit code 5 (pytest found no tests yet) is tolerated.
-test:
+# Run the test suite. Exit code 5 (pytest found no tests) is tolerated.
+test: _setup
 	uv run pytest || [ $$? -eq 5 ]
 
 # Remove Python and tooling caches.
@@ -60,8 +75,7 @@ clean:
 
 # clean + drop the virtual environment and generated output.
 fclean: clean
-	@if [ -L .venv ]; then rm -rf "$$(readlink .venv)"; fi
-	rm -rf .venv
+	rm -rf .venv $(VENV_TARGET)
 	rm -rf data/output
 
 re: fclean install
